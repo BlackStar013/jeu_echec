@@ -36,24 +36,22 @@ class Pawn(Piece):
         moves = []
         direction = -1 if self.color == Color.WHITE else 1
         start_row = 6 if self.color == Color.WHITE else 1
-        # avance de 1
+        # pour une avance simple de 1 case
         r = self.row + direction
-        if board.inside(r, self.col) and board.get(r, self.col) is None:
+        if(board.inside(r, self.col) and board.get(r, self.col) is None):
             moves.append((r, self.col))
-        # avance de 2
+        # pour l'avance de deux
         r2 = self.row + 2 * direction
-        # on vérifie qu'il n'a pas encore bougé, que la case devant et la case d'arrivée sont vides (dans le plateau) 
-        if (self.row == start_row and board.get(r, self.col) is None and board.inside(r2, self.col) and board.get(r2, self.col) is None):
+        if( (self.row == start_row and board.inside(r2, self.col) and board.get(r, self.col) is None and board.get(r2, self.col) is None) ):
             moves.append((r2, self.col))
-        # captures
+        # pour manger de manière classique
         for dc in (-1, 1):
             c = self.col + dc
-            if board.inside(r, c):
+            if( board.inside(r, c)):
                 target = board.get(r, c)
-                if( (target is not None) and (target.color != self.color) ):
+                if( target is not None and target.color != self.color):
                     moves.append((r, c))
         return moves
-
 
 class Knight(Piece):
     def valid_moves(self, board):
@@ -91,7 +89,7 @@ class SlidingPiece(Piece):
                 if target is None:
                     moves.append((r, c))
                 else:
-                    if target.color != self.color:
+                    if( target.color != self.color):
                         moves.append((r, c))
                     break
                 r += dr
@@ -132,14 +130,14 @@ class King(Piece):
         moves = []
         for dr in (-1, 0, 1):
             for dc in (-1, 0, 1):
-                if( (dr == 0) and (dc == 0) ):
+                if( dr == 0 and dc == 0):
                     continue
                 r = self.row + dr
                 c = self.col + dc
-                if not board.inside(r, c):
+                if( not board.inside(r, c)):
                     continue
                 target = board.get(r, c)
-                if ( (target is None) or (target.color != self.color) ):
+                if( target is None or target.color != self.color):
                     moves.append((r, c))
         return moves
 
@@ -164,17 +162,11 @@ class Game:
         self.turn = Color.WHITE
         self.state = GameState.RUNNING
         self.setup()
+        self.en_passant_target = None
+    
     def setup(self):
         # noirs
-        order = [
-            Tower,
-            Knight,
-            Bishop,
-            Queen,
-            King,
-            Bishop,
-            Knight,
-            Tower]
+        order = [Tower, Knight, Bishop, Queen, King, Bishop, Knight, Tower]
         for col, piece_class in enumerate(order):
             self.board.set(0,col,piece_class(Color.BLACK, 0, col))
         for col in range(8):
@@ -184,10 +176,11 @@ class Game:
             self.board.set(6,col,Pawn(Color.WHITE, 6, col))
         for col, piece_class in enumerate(order):
             self.board.set(7,col,piece_class(Color.WHITE, 7, col))
+    
     def find_king(self, color):
         for row in self.board.grid:
             for piece in row:
-                if ( (isinstance(piece, King)) and (piece.color == color)):
+                if( (isinstance(piece, King)) and (piece.color == color)):
                     return piece
         return None
 
@@ -208,18 +201,88 @@ class Game:
 
     def legal_moves(self, piece):
         legal = []
-        for row, col in piece.valid_moves(self.board):
+        moves = piece.valid_moves(self.board)
+        # pour la prise en passant, donc seulement pour les pions
+        if(isinstance(piece, Pawn)):
+            if(self.en_passant_target is not None):
+                ep_row, ep_col = self.en_passant_target
+                direction = -1 if piece.color == Color.WHITE else 1
+                if(ep_row == piece.row + direction and abs(ep_col - piece.col) == 1):
+                    moves.append((ep_row, ep_col))
+        # pour le roque, on différencie en petit et grand
+        if(isinstance(piece, King) and not piece.has_moved):
+            row = piece.row
+            # donc le petit
+            rook = self.board.get(row, 7)
+            if((isinstance(rook, Tower) and not rook.has_moved and self.board.get(row, 5) is None and self.board.get(row, 6) is None)):
+                enemy = piece.enemy()
+                if((not self.square_attacked(row, 4, enemy) and not self.square_attacked(row, 5, enemy) and not self.square_attacked(row, 6, enemy))):
+                    moves.append((row, 6))
+            # et le 3 cases
+            rook = self.board.get(row, 0)
+            if( (isinstance(rook, Tower) and not rook.has_moved and self.board.get(row, 1) is None and self.board.get(row, 2) is None and self.board.get(row, 3) is None)):
+                enemy = piece.enemy()
+                if( (not self.square_attacked(row, 4, enemy) and not self.square_attacked(row, 3, enemy) and not self.square_attacked(row, 2, enemy))):
+                    moves.append((row, 2))
+        # les autres coups classiques
+        for row, col in moves:
             sim = self.simulate_move(piece, row, col)
-            if not sim.is_in_check(piece.color):
+            if( not sim.is_in_check(piece.color)):
                 legal.append((row, col))
         return legal
 
+    def square_attacked(self, row, col, by_color):
+        for board_row in self.board.grid:
+            for piece in board_row:
+                if(piece is None or piece.color != by_color):
+                    continue
+                if(isinstance(piece, Pawn)):
+                    direction = -1 if piece.color == Color.WHITE else 1
+                    for dc in (-1, 1):
+                        if((piece.row + direction, piece.col + dc) == (row, col)):
+                            return True
+                else:
+                    if((row, col) in piece.valid_moves(self.board)):
+                        return True
+        return False
+
     def move_piece(self, piece, row, col, validate=True):
         if validate:
-            if (row, col) not in self.legal_moves(piece):
+            if( (row, col) not in self.legal_moves(piece)):
                 return False
-        self.board.set(piece.row, piece.col, None)
+        old_row = piece.row
+        old_col = piece.col
+        # donc la prise en passant
+        if isinstance(piece, Pawn):
+            if( (self.en_passant_target is not None and (row, col) == self.en_passant_target and self.board.get(row, col) is None)):
+                captured_row = old_row
+                captured_col = col
+                self.board.set(captured_row, captured_col, None)
+        # le roque
+        if isinstance(piece, King):
+            # petit
+            if(col - old_col == 2):
+                rook = self.board.get(old_row, 7)
+                self.board.set(old_row, 7, None)
+                self.board.set(old_row, 5, rook)
+            # et grand
+            elif(col - old_col == -2):
+                rook = self.board.get(old_row, 0)
+                self.board.set(old_row, 0, None)
+                self.board.set(old_row, 3, rook)
+        # le reste
+        self.board.set(old_row, old_col, None)
         self.board.set(row, col, piece)
+        # et on change les cases de prise en passant
+        self.en_passant_target = None
+        if(isinstance(piece, Pawn)):
+            if(abs(row - old_row) == 2):
+                middle_row = (row + old_row) // 2
+                self.en_passant_target = (middle_row, col)
+        # et la promotion des pions
+        if isinstance(piece, Pawn):
+            if(row == 0 or row == 7):
+                self.board.set(row, col, Queen(piece.color, row, col))
         piece.has_moved = True
         return True
 
