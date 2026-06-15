@@ -163,6 +163,7 @@ class Game:
         self.state = GameState.RUNNING
         self.setup()
         self.en_passant_target = None
+        self.move_history = []
     
     def setup(self):
         # noirs
@@ -252,6 +253,7 @@ class Game:
                 return False
         old_row = piece.row
         old_col = piece.col
+        captured_piece = self.board.get(row, col)
         # donc la prise en passant
         if isinstance(piece, Pawn):
             if( (self.en_passant_target is not None and (row, col) == self.en_passant_target and self.board.get(row, col) is None)):
@@ -280,10 +282,24 @@ class Game:
                 middle_row = (row + old_row) // 2
                 self.en_passant_target = (middle_row, col)
         # et la promotion des pions
-        if isinstance(piece, Pawn):
+        if(isinstance(piece, Pawn)):
             if(row == 0 or row == 7):
                 self.board.set(row, col, Queen(piece.color, row, col))
         piece.has_moved = True
+        start = self.square_name(old_row, old_col)
+        end = self.square_name(row, col)
+
+        piece_name = piece.__class__.__name__
+
+        move_text = (
+            f"{piece_name} : "
+            f"{start} -> {end}"
+        )
+
+        if captured_piece is not None:
+            move_text += " (capture)"
+
+        self.move_history.append(move_text)
         return True
 
     def all_moves(self, color):
@@ -307,3 +323,8 @@ class Game:
                 self.state = GameState.STALEMATE
             else:
                 self.state = GameState.RUNNING
+    
+    def square_name(self, row, col):
+        file = chr(ord('a') + col)
+        rank = str(8 - row)
+        return file + rank
