@@ -1,6 +1,7 @@
 image: gibson-registry.telecomnancy.univ-lorraine.fr/felix.gaiffe/rattrapage_codingweek:latest
 
 stages:
+  - build-image
   - test
 
 build-image-job:
@@ -19,7 +20,7 @@ build-image-job:
       --destination "${CI_REGISTRY_IMAGE}"
 
 
-test_operation:
+test-job:
   stage: test
   script:
     - python -m unittest discover -s test --timeout=180 --forked --junitxml=resultat.xml
