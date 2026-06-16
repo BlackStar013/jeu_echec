@@ -10,7 +10,7 @@ from logique_jeu import (
     Bishop,
     Queen,
     King,
-)
+    GameState)
 
 
 class GameManager:
@@ -29,6 +29,22 @@ class GameManager:
         self.selected_piece = None
         self.available_moves = []
         self.running = True
+        self.iso_tile_width = 80
+        self.iso_tile_height = 40
+        self.origin_x = 320
+        self.origin_y = 100
+    
+    def board_to_iso(self, row, col):
+        x = (col - row) * (self.iso_tile_width // 2)
+        y = (col + row) * (self.iso_tile_height // 2)
+        return (self.origin_x + x, self.origin_y + y)
+    
+    def iso_to_board(self, x, y):
+        x -= self.origin_x
+        y -= self.origin_y
+        col = (x/(self.iso_tile_width/2) + y/(self.iso_tile_height/2)) / 2
+        row = (y/(self.iso_tile_height / 2) - x/(self.iso_tile_width / 2))/2
+        return int(round(row)), int(round(col))
 
     def save_game(self, filename="save.json"):
         data = {"turn": self.game.turn.value, "pieces": [],}
@@ -60,54 +76,85 @@ class GameManager:
         self.game.turn = Color(data["turn"])
         print("Partie chargée.")
 
-    # pour tester déjà en 2D avant la partie isométrique
     def draw_board(self):
         for row in range(8):
             for col in range(8):
-                if((row + col) % 2 == 0):
+                if (row + col) % 2 == 0:
                     color = self.COLORS["light"]
                 else:
                     color = self.COLORS["dark"]
-                rect = pygame.Rect(col * self.TILE_SIZE, row * self.TILE_SIZE, self.TILE_SIZE, self.TILE_SIZE)
-                pygame.draw.rect(self.screen, color, rect)
+                self.draw_iso_tile(row, col, color)
+
+    def draw_iso_tile(self, row, col, color):
+        x, y = self.board_to_iso(row, col)
+        hw = self.iso_tile_width // 2
+        hh = self.iso_tile_height // 2
+        points = [(x, y - hh), (x + hw, y), (x, y + hh), (x - hw, y)]
+        pygame.draw.polygon(self.screen, color, points)
+        pygame.draw.polygon(self.screen, (0, 0, 0), points, 1)
 
     def piece_symbol(self, piece):
         symbols = {
-            Pawn: "P",
-            Tower: "T",
-            Knight: "C",
-            Bishop: "F",
-            Queen: "Q",
-            King: "K",
+            Color.WHITE: {
+                Pawn: "♙",
+                Tower: "♖",
+                Knight: "♘",
+                Bishop: "♗",
+                Queen: "♕",
+                King: "♔",
+            },
+            Color.BLACK: {
+                Pawn: "♟",
+                Tower: "♜",
+                Knight: "♞",
+                Bishop: "♝",
+                Queen: "♛",
+                King: "♚",
+            }
         }
-        letter = symbols[type(piece)]
-        if piece.color == Color.BLACK:
-            return letter.lower()
-        return letter
+        return symbols[piece.color][type(piece)]
 
     def draw_pieces(self):
-        font = pygame.font.SysFont(None, 50)
+        font = pygame.font.SysFont("segoeuisymbol", 48)
+        pieces_to_draw = []
         for row in self.game.board.grid:
             for piece in row:
                 if piece is None:
                     continue
-                text = font.render(self.piece_symbol(piece), True, (0, 0, 0))
-                x = piece.col * self.TILE_SIZE + 30
-                y = piece.row * self.TILE_SIZE + 20
-                self.screen.blit(text, (x, y))
+                depth = piece.row + piece.col
+                pieces_to_draw.append((depth, piece))
+        pieces_to_draw.sort(key=lambda x: x[0])
+        for _, piece in pieces_to_draw:
+            x, y = self.board_to_iso(piece.row, piece.col)
+            symbol = self.piece_symbol(piece)
+            if piece.color == Color.WHITE:
+                color = (255, 255, 255)
+                outline = (0, 0, 0)
+            else:
+                color = (20, 20, 20)
+                outline = (255, 255, 255)
+            x, y = self.board_to_iso(piece.row, piece.col)
+            text = font.render(symbol, True, color)
+            shadow = font.render(symbol, True, outline)
+            rect = text.get_rect(center=(x, y - 20))
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                self.screen.blit(shadow, (rect.x + dx, rect.y + dy))
+            self.screen.blit(text, rect)
+            rect = text.get_rect(center=(x, y - 20))
+            self.screen.blit(text, rect)
 
     def draw_selection(self):
         if self.selected_piece is None:
             return
         rect = pygame.Rect(self.selected_piece.col * self.TILE_SIZE, self.selected_piece.row * self.TILE_SIZE, self.TILE_SIZE, self.TILE_SIZE)
-        pygame.draw.rect(self.screen, self.COLORS["selected"], rect, 4)
         for row, col in self.available_moves:
-            center = (col * self.TILE_SIZE + self.TILE_SIZE // 2, row * self.TILE_SIZE + self.TILE_SIZE // 2)
-            pygame.draw.circle(self.screen, self.COLORS["move"], center, 10)
+            x, y = self.board_to_iso(row, col)
+            pygame.draw.circle(self.screen, self.COLORS["move"], (x, y), 8)
 
     def handle_click(self, pos):
-        col = pos[0] // self.TILE_SIZE
-        row = pos[1] // self.TILE_SIZE
+        row, col = self.iso_to_board(pos[0], pos[1])
+        if not self.game.board.inside(row, col):
+            return
         piece = self.game.board.get(row, col)
         if self.selected_piece is None:
             if (piece is not None and piece.color == self.game.turn):
@@ -123,6 +170,30 @@ class GameManager:
     def print_historique(self, game):
         for move in game.move_history:
             print(move)
+    
+    def draw_turn(self):
+        font = pygame.font.SysFont(None, 36)
+        if self.game.turn == Color.WHITE:
+            text = "Tour : Blanc"
+            color = (255, 255, 255)
+        else:
+            text = "Tour : Noir"
+            color = (0, 0, 0)
+        surface = font.render(text, True, color)
+        self.screen.blit(surface, (10, 10))
+    
+    def draw_status(self):
+        font = pygame.font.SysFont(None, 36)
+        status = {
+            GameState.RUNNING: "",
+            GameState.CHECK: "ECHEC !",
+            GameState.CHECKMATE: "ECHEC ET MAT",
+            GameState.STALEMATE: "PAT"
+        }
+        text = status[self.game.state]
+        if text:
+            surface = font.render(text, True, (255, 0, 0))
+            self.screen.blit(surface, (10, 50))
 
 # main
     def run(self):
@@ -137,10 +208,12 @@ class GameManager:
                         self.save_game()
                     elif event.key == pygame.K_l:
                         self.load_game()
-            self.screen.fill((0, 0, 0))
+            self.screen.fill((0, 100, 255))
             self.draw_board()
             self.draw_selection()
             self.draw_pieces()
+            self.draw_turn()
+            self.draw_status()
             pygame.display.flip()
             self.clock.tick(60)
         self.print_historique(self.game)
