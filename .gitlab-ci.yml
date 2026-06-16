@@ -1,32 +1,24 @@
-image: gibson-registry.telecomnancy.univ-lorraine.fr/felix.gaiffe/rattrapage_codingweek:latest
+image: python:3.12
 
 stages:
-  - build-image
   - test
 
-build-image-job:
-  stage: build-image
-  # rules:
-  #  - if: $CI_PIPELINE_SOURCE == "schedule"
-  # pour qu'il se lance que si il vient de schedule
-  image:
-    name: gcr.io/kaniko-project/executor:v1.23.2-debug
-    entrypoint: [""]
-  # image pré faite
-  script:
-    - /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "${CI_REGISTRY_IMAGE}"
+before_script:
+  - python --version
+  - pip install --upgrade pip
+  - pip install pytest pygame
 
-
-test-job:
+tests:
   stage: test
+
   script:
-    - python -m unittest discover -s tests # --timeout=180 --forked --junitxml=resultat.xml
-  #artifacts:
-  #  reports:
-  #    junit: [./resultat.xml]
-  timeout: 4m
-  #variables:
-  #  RUNNER_SCRIPT_TIMEOUT: 3m
+    - python -m unittest discover -s tests
+
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: report.xml
+
+  after_script:
+    - python -m pytest tests/ --junitxml=report.xml || true
