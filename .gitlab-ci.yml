@@ -1,4 +1,4 @@
-image: gibson-registry.telecomnancy.univ-lorraine.fr/felix.gaiffe/rattrapage_codingweek:latest
+image: python:3.12
 
 stages:
   - build-image
