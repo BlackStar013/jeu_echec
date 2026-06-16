@@ -6,8 +6,8 @@ stages:
 
 build-image-job:
   stage: build-image
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+  # rules:
+  #  - if: $CI_PIPELINE_SOURCE == "schedule"
   # pour qu'il se lance que si il vient de schedule
   image:
     name: gcr.io/kaniko-project/executor:v1.23.2-debug
