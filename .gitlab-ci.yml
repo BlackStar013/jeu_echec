@@ -1,0 +1,31 @@
+image: gibson-registry.telecomnancy.univ-lorraine.fr/felix.gaiffe/rattrapage_codingweek:latest
+
+stages:
+  - test
+
+build-image-job:
+  stage: build-image
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  # pour qu'il se lance que si il vient de schedule
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  # image pré faite
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}"
+
+
+test_operation:
+  stage: test
+  script:
+    - python -m unittest discover -s test --timeout=180 --forked --junitxml=resultat.xml
+  artifacts:
+    reports:
+      junit: [./resultat.xml]
+  timeout: 4m
+  variables:
+    RUNNER_SCRIPT_TIMEOUT: 3m
