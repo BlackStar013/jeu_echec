@@ -23,7 +23,7 @@ build-image-job:
 test-job:
   stage: test
   script:
-    - python -m unittest discover -s test --timeout=180 --forked --junitxml=resultat.xml
+    - python -m unittest discover -s tests --timeout=180 --forked --junitxml=resultat.xml
   artifacts:
     reports:
       junit: [./resultat.xml]
