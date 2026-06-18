@@ -4,8 +4,8 @@
 
 ## Présentation :
 
-    Voici mon projet de code en python d'implémentation d'un jeu d'échecs à deux joueurs en affichage isométrique. Il est possible de jouer complètement en local en suivant toutes les règles du jeu. 
-    Enfin, j'ai suivi une approche de dévelopement orienté objet, en séparant donc la logique métier du moteur de jeu et de la partie affiche graphique. 
+Voici mon projet de code en python d'implémentation d'un jeu d'échecs à deux joueurs en affichage isométrique. Il est possible de jouer complètement en local en suivant toutes les règles du jeu. 
+Enfin, j'ai suivi une approche de dévelopement orienté objet, en séparant donc la logique métier du moteur de jeu et de la partie affiche graphique. 
 
 ## Fonctionnalités incluses :
 
