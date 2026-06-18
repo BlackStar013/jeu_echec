@@ -469,3 +469,6 @@ Ce sont souvent ces cas limites qui révèlent les derniers bugs d'un moteur d'�
 - ce qui a été conservé, modifié ou rejeté + la justification de ces choix :
 globalement je pense prendre unittest, car je connais essentiellement pytest, mais unittest a l'air assez similaire
 pour ce qui est des tests en eux même, c'est plus rapide et efficace que de les écrire à la main, et probablement avec une meilleure couverture de test, donc je vais garder les tests. Evidemment, après relecture de ceux ci
+
+## Utilisation 2.bis :
+j'ai oublié le prompt et tout exact, mais globalement je lui ai demandé d'améliorer la couverture de test
