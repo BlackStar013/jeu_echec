@@ -97,18 +97,18 @@ Le projet inclus aussi des tests, automatisés par une pipeline sur ce dépôt, 
 * Cloner le dépôt :
 * Accéder au dossier :
 
--> `cd projet-echecs`
+`cd projet-echecs`
 
 * Installer les dépendances :
 
--> `pip install pygame`
+`pip install pygame`
 
 
 ### Exécution
 
 * Lancer l'application :
 
--> `python game_manager.py`
+`python game_manager.py`
 
 
 ## Contrôles
