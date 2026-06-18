@@ -1,5 +1,7 @@
 # Jeu d'échecs 3D ( vue isométrique )
 
+![image du jeu, avec l'échéquier, les pièces des 2 joueurs, et le tour du jour actif](image_jeu.png)
+
 ## Présentation :
 
     Voici mon projet de code en python d'implémentation d'un jeu d'échecs à deux joueurs en affichage isométrique. Il est possible de jouer complètement en local en suivant toutes les règles du jeu. 
@@ -77,6 +79,11 @@ Le fichier de sauvegarde par défaut est :
 save.json
 
 Pour l'instant, pour sauver il faut presser `s` (pour `save`) durant une partie, ce qui crée un fichier json de la partie à ce moment. Cela écrase donc un possible fichier déjà existant. Pour la charger ensuite, il faut presser `l` (pour `load`) ce qui reprend la partie à l'état de la sauvegarde. 
+
+## Tests :
+
+Le projet inclus aussi des tests, automatisés par une pipeline sur ce dépôt, et lançable manuellement en local avec la commande
+`python -m unittest discover -s tests`
 
 ## Installation
 
