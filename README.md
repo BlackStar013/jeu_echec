@@ -94,10 +94,11 @@ Le projet inclus aussi des tests, automatisés par une pipeline sur ce dépôt, 
 
 ### Installation
 
-* Cloner le dépôt :
+* Cloner le dépôt
+vous obtenez alors le dossier du projet, avec notamment à l'intérieur un dossier `src` avec la logique du jeu et l'application, ainsi que le dossier `tests` contenant les tests réalisés.
 * Accéder au dossier :
 
-`cd projet-echecs`
+`cd rattrapage_codingweek`
 
 * Installer les dépendances :
 
@@ -108,7 +109,7 @@ Le projet inclus aussi des tests, automatisés par une pipeline sur ce dépôt, 
 
 * Lancer l'application :
 
-`python game_manager.py`
+`python ./src/app.py`
 
 
 ## Contrôles
